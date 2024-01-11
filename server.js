@@ -122,7 +122,7 @@ class TasksGoalsManager {
                 //JSON.stringify(item);
                 res
                     .status(200)
-                    .json(decryptData(item))
+                    .json(item)
             })
             .catch(error => console.log(error));
     }
