@@ -8,6 +8,8 @@ const tasksSchema = new Schema({
     "endTime": String,
     "date": String,
     "collaborators": [String],
+    "color": String,
+    "done": Boolean,
     "missed": Boolean
 });
 

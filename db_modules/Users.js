@@ -5,6 +5,7 @@ const Schema = mongoose.Schema;
 const usersSchema = new Schema({
     login: String,
     password: String,
+    email: String,
     friends: [String],
     tasks: [{
         type: mongoose.Schema.Types.ObjectId,

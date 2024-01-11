@@ -3,6 +3,9 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const cors = require('cors');
+const crypto = require('crypto');
+const fs = require('fs');
 
 /* DB table model */
 const Users = require('./db_modules/Users');
@@ -12,7 +15,7 @@ const Goals = require('./db_modules/Goals');
 
 /* Create server */
 
-const PORT = 8800;
+const PORT = 3001;
 app.listen(PORT, () => {
     console.log('Server listening on port: ' + PORT);
 });
@@ -20,7 +23,7 @@ app.listen(PORT, () => {
 
 /* Connect to database */
 
-const URL = 'mongodb://localhost:27017/naptask';
+const URL = 'mongodb+srv://naptaskmakeyourday:Esjq3GwuPRt6u79c@cluster0.9uvueow.mongodb.net/naptask?retryWrites=true&w=majority';
 
 mongoose
     .connect(URL)
@@ -32,6 +35,71 @@ mongoose
 /* Middleware */
 
 app.use(express.json());
+app.use(cors())
+
+
+/* Crypto setup */
+
+const key_iv = JSON.parse(fs.readFileSync(`${__dirname}/key.json`));
+const key = Buffer.from(key_iv.key, 'hex');
+const iv = key_iv.iv;
+
+/* Encrypt data */
+
+const encryptData = (stringForEncrypt) => {
+
+    let encryptedData = ''
+
+
+    if (typeof stringForEncrypt === 'object') {
+        console.log(stringForEncrypt)
+        Object.keys(stringForEncrypt).forEach(field => {
+            if (field !== 'missed') {
+                const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+                encryptedFieldValue = cipher.update(stringForEncrypt[field], 'utf-8', 'hex');
+                encryptedFieldValue += cipher.final('hex');
+                stringForEncrypt[field] = encryptedFieldValue;
+            }
+        });
+
+        return stringForEncrypt
+    } else {
+        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv);
+        encryptedData = cipher.update(stringForEncrypt, 'utf-8', 'hex');
+        encryptedData += cipher.final('hex');
+    }
+
+    return `${encryptedData}`
+}
+
+/* Decrypt data */
+
+const decryptData = (stringForDecrypt) => {
+
+    if (typeof stringForDecrypt.tasks === 'object') {
+        stringForDecrypt.tasks.toObject()
+        stringForDecrypt._doc.tasks.forEach(object => {
+            Object.keys(object._doc).forEach(field => {
+
+                if (field !== '_id' && field !== 'collaborators' && field !== '__v' && field !== 'missed') {
+                    console.log(object._doc[field])
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+                    let decryptedData = decipher.update(object._doc[field], 'hex', 'utf-8');
+                    decryptedData += decipher.final('utf-8');
+                    object[field] = decryptedData;
+                }
+            })
+        });
+
+        return stringForDecrypt
+    } else {
+
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+        let decryptedData = decipher.update(JSON.stringify(stringForDecrypt), 'hex', 'utf-8');
+        decryptedData += decipher.final('utf-8');
+        return decryptedData
+    }
+}
 
 
 /* Routers */
@@ -45,16 +113,16 @@ class TasksGoalsManager {
         this.table = table;
     }
 
-    getItem(res) {
+    getItem(req, res) {
         Users
-            .findOne({ "login": 'Wellerman' })
+            .findOne({ "_id": req.query.id ? req.query.id : '659fe6a7bf791a4da47f92c0' })
             .populate(this.editItem)
             .select(this.editItem)
             .then((item) => {
-                JSON.stringify(item);
+                //JSON.stringify(item);
                 res
                     .status(200)
-                    .json(item)
+                    .json(decryptData(item))
             })
             .catch(error => console.log(error));
     }
@@ -73,26 +141,50 @@ class TasksGoalsManager {
             .catch(error => console.log(error))
     }
 
-    deleteItem(res, id) {
+    deleteItem(res, id, user_id) {
 
         const EditedTable = this.table;
 
         EditedTable
             .findByIdAndDelete(id)
-            .then(() => res.end())
+            .then((item) => {
+                Users
+                    .findByIdAndUpdate(user_id, {
+                        $pull: { tasks: item._id }
+                    })
+                    .catch(error => console.log(error));
+
+                res.end()
+            })
             .catch(error => console.log(error));
     }
 
-    setItem(res, data) {
+    setItem(res, data, user_id) {
 
         const EditedTable = this.table;
 
         const addItem = new EditedTable(data);
 
+        let item_id = 'yt';
+
         addItem
             .save()
-            .then((added) => res.json(added))
+            .then((added) => {
+                Users
+                    .findByIdAndUpdate(user_id, {
+                        $push: {
+                            tasks: added._id
+                        }
+                    })
+                    .then()
+                    .catch(error => console.log(error))
+
+                res
+                    .status(200)
+                    .json(added)
+            })
             .catch((error) => console.log(error));
+
     }
 }
 
@@ -101,12 +193,12 @@ app.get('/', (req, res) => {
     res.redirect('/login')
 })
 
-app.get('/login', (req, res) => {
+app.post('/login', (req, res) => {
 
-    const query = req.query;
+    const query = req.body;
 
-    const login = query.login;
-    const password = query.password;
+    const login = encryptData(query.login);
+    const password = encryptData(query.password);
     //countDocuments
     Users
         .find({
@@ -126,8 +218,9 @@ app.post('/signup', (req, res) => {
     const body = req.body;
 
     const newUser = {
-        "login": `${body.login}`,
-        "password": `${body.password}`,
+        "login": encryptData(`${body.login}`),
+        "password": encryptData(`${body.password}`),
+        "email": encryptData(`${body.email}`),
         "friends": [],
         "tasks": [],
         "goals": []
@@ -146,19 +239,22 @@ app.post('/signup', (req, res) => {
 const tasks = new TasksGoalsManager('tasks', Tasks);
 
 app.get('/task', (req, res) => {
-    tasks.getItem(res);
+    tasks.getItem(req, res);
 });
 
 app.put('/task/edit/:id', (req, res) => {
-    tasks.changeItem(res, req.params.id, req.body);
+    tasks.changeItem(res, req.params.id, encryptData(req.body));
 });
 
 app.delete('/task/delete/:id', (req, res) => {
-    tasks.deleteItem(res, req.params.id);
+    tasks.deleteItem(res, req.params.id, req.body.user_id);
 });
 
 app.post('/task/add', (req, res) => {
-    tasks.setItem(res, req.body);
+    const user_id = req.body.user_id
+    let body = req.body;
+
+    tasks.setItem(res, encryptData(body), user_id);
 });
 
 
