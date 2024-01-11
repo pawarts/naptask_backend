@@ -30,8 +30,6 @@ mongoose
     .then(() => console.log('I\'m connected to DB (^_^)'))
     .catch(error => console.log(error))
 
-console.log(URL)
-
 
 
 /* Middleware */
@@ -241,7 +239,6 @@ app.post('/signup', (req, res) => {
 const tasks = new TasksGoalsManager('tasks', Tasks);
 
 app.get('/task', (req, res) => {
-    console.log('task');
     tasks.getItem(req, res);
 });
 
