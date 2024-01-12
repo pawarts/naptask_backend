@@ -35,7 +35,13 @@ mongoose
 /* Middleware */
 
 app.use(express.json());
-app.use(cors())
+app.use(cors({
+  origin: 'https://naptask.onrender.com',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+}));
+
+/*app.use(cors())*/
 
 
 /* Crypto setup */
