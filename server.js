@@ -16,7 +16,7 @@ const Goals = require('./db_modules/Goals');
 /* Create server */
 
 const PORT = 3001;
-const HOST = 'naptask.onrender.com'
+const HOST = '0.0.0.0'
 app.listen(PORT, HOST, () => {
     console.log('Server listening on port: ' + PORT);
 });
