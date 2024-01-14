@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 /* DB table model */
 const Users = require('./db_modules/Users');
@@ -16,7 +17,8 @@ const Goals = require('./db_modules/Goals');
 /* Create server */
 
 const PORT = 3001;
-app.listen(PORT, () => {
+const HOST = 'https://naptask.onrender.com'
+app.listen(PORT, HOST, () => {
     console.log('Server listening on port: ' + PORT);
 });
 
@@ -35,13 +37,8 @@ mongoose
 /* Middleware */
 
 app.use(express.json());
-app.use(cors({
-  origin: 'https://naptask.onrender.com',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-}));
-
-/*app.use(cors())*/
+app.use(express.static(path.join(__dirname), "build"))
+app.use(cors())
 
 
 /* Crypto setup */
@@ -128,7 +125,7 @@ class TasksGoalsManager {
                 //JSON.stringify(item);
                 res
                     .status(200)
-                    .json(item)
+                    .json(decryptData(item))
             })
             .catch(error => console.log(error));
     }
