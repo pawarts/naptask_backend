@@ -15,7 +15,7 @@ const Goals = require('./db_modules/Goals');
 
 /* Create server */
 
-const PORT = 3001;
+const PORT = 10000;
 const HOST = '0.0.0.0'
 app.listen(PORT, HOST, () => {
     console.log('Server listening on port: ' + PORT);
