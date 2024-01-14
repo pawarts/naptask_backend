@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
 
 /* DB table model */
 const Users = require('./db_modules/Users');
@@ -37,7 +36,6 @@ mongoose
 /* Middleware */
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname), "build"))
 app.use(cors())
 
 
