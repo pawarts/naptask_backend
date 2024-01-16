@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 /* DB table model */
 const Users = require('./db_modules/Users');
@@ -55,7 +56,7 @@ const encryptData = (stringForEncrypt) => {
     if (typeof stringForEncrypt === 'object') {
         console.log(stringForEncrypt)
         Object.keys(stringForEncrypt).forEach(field => {
-            if (field !== 'missed') {
+            if (field !== 'missed' && field !== 'done') {
                 const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
                 encryptedFieldValue = cipher.update(stringForEncrypt[field], 'utf-8', 'hex');
                 encryptedFieldValue += cipher.final('hex');
