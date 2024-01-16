@@ -83,7 +83,7 @@ const decryptData = (stringForDecrypt) => {
         stringForDecrypt._doc.tasks.forEach(object => {
             Object.keys(object._doc).forEach(field => {
 
-                if (field !== '_id' && field !== 'collaborators' && field !== '__v' && field !== 'missed') {
+                if (field !== '_id' && field !== 'collaborators' && field !== '__v' && field !== 'missed' && field !== 'done') {
                     console.log(object._doc[field])
                     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
                     let decryptedData = decipher.update(object._doc[field], 'hex', 'utf-8');
