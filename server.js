@@ -146,16 +146,14 @@ class TasksGoalsManager {
 
         const EditedTable = this.table;
 
-        id.split(',');
-
-        console.log(id);
+        console.log(id.split(','));
 
         EditedTable
-            .deleteMany({ _id: { $in: id } })
+            .deleteMany({ _id: { $in: id.split(',') } })
             .then(() => {
                 Users
                     .findByIdAndUpdate(user_id, {
-                        $pull: { tasks: { $in: id } }
+                        $pull: { tasks: { $in: id.split(',') } }
                     })
                     .catch(error => console.log(error));
 
