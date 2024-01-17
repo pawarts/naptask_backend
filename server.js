@@ -146,6 +146,8 @@ class TasksGoalsManager {
 
         const EditedTable = this.table;
 
+        console.log(id);
+
         EditedTable
             .deleteMany({ _id: { $in: id } })
             .then(() => {
