@@ -148,11 +148,10 @@ class TasksGoalsManager {
 
         EditedTable
             .deleteMany({ _id: { $in: id } })
-            .then((item) => {
-                console.log(item)
+            .then(() => {
                 Users
                     .findByIdAndUpdate(user_id, {
-                        $pull: { tasks: item._id }
+                        $pull: { tasks: { $in: id } }
                     })
                     .catch(error => console.log(error));
 
