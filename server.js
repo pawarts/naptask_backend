@@ -54,7 +54,6 @@ const encryptData = (stringForEncrypt) => {
 
 
     if (typeof stringForEncrypt === 'object') {
-        console.log(stringForEncrypt)
         Object.keys(stringForEncrypt).forEach(field => {
             if (field !== 'missed' && field !== 'done') {
                 const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
@@ -84,7 +83,7 @@ const decryptData = (stringForDecrypt) => {
             Object.keys(object._doc).forEach(field => {
 
                 if (field !== '_id' && field !== 'collaborators' && field !== '__v' && field !== 'missed' && field !== 'done') {
-                    console.log(object._doc[field])
+
                     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
                     let decryptedData = decipher.update(object._doc[field], 'hex', 'utf-8');
                     decryptedData += decipher.final('utf-8');
@@ -148,8 +147,9 @@ class TasksGoalsManager {
         const EditedTable = this.table;
 
         EditedTable
-            .findByIdAndDelete(id)
+            .deleteMany({ _id: { $in: id } })
             .then((item) => {
+                console.log(item)
                 Users
                     .findByIdAndUpdate(user_id, {
                         $pull: { tasks: item._id }
