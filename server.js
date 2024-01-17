@@ -146,6 +146,8 @@ class TasksGoalsManager {
 
         const EditedTable = this.table;
 
+        id.split(',');
+
         console.log(id);
 
         EditedTable
