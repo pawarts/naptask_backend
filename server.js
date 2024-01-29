@@ -38,8 +38,7 @@ mongoose
 
 
 const corsOptions = {
-  origin: 'https://naptask.onrender.com', 
-  optionsSuccessStatus: 200,
+  origin: 'https://naptask-frontend.vercel.app', optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
