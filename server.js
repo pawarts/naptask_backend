@@ -36,8 +36,14 @@ mongoose
 
 /* Middleware */
 
+
+const corsOptions = {
+  origin: 'https://naptask.onrender.com', 
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cors())
 
 
 /* Crypto setup */
