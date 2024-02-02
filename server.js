@@ -204,7 +204,7 @@ class TasksGoalsManager {
 
 
 app.get('/', (req, res) => {
-    res.redirect('/login')
+    res.end('This new update')
 })
 
 app.post('/login', (req, res) => {
