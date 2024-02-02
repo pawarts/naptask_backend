@@ -42,8 +42,6 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 204,
 }));
-
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use((req, res, next) => {
   // Замініть 'https://your-client-domain.com' на фактичний домен вашого клієнта
