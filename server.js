@@ -36,20 +36,22 @@ mongoose
 
 /* Middleware */
 
-app.use(cors({
-  origin: 'https://naptask-frontend.vercel.app',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-  optionsSuccessStatus: 204,
-}));
+
+const whitelist = ['https://naptask-frontend.vercel.app']; // assuming front-end application is running on localhost port 3000
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use((req, res, next) => {
-  // Замініть 'https://your-client-domain.com' на фактичний домен вашого клієнта
-  res.header('Access-Control-Allow-Origin', 'https://naptask-frontend.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
+
 
 /* Crypto setup */
 
