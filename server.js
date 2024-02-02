@@ -36,10 +36,12 @@ mongoose
 
 /* Middleware */
 
-
-const corsOptions = {
-  origin: 'https://naptask-frontend.vercel.app', optionsSuccessStatus: 200,
-};
+app.use(cors({
+  origin: 'https://naptask-frontend.vercel.app',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
+}));
 
 app.use(cors(corsOptions));
 app.use(express.json());
