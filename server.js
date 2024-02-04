@@ -37,8 +37,7 @@ mongoose
 /* Middleware */
 
 
-const whitelist = ['https://naptask-frontend.vercel.app']; // assuming front-end application is running on localhost port 3000
-
+const whitelist = ['https://naptask-frontend.vercel.app', 'http://localhost:3000'];
 const corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.indexOf(origin) !== -1) {
