@@ -17,7 +17,6 @@ const Goals = require('./db_modules/Goals');
 /* Create server */
 
 const PORT = 10000;
-const HOST = '0.0.0.0'
 app.listen(PORT, () => {
     console.log('Server listening on port: ' + PORT);
 });
@@ -25,7 +24,7 @@ app.listen(PORT, () => {
 
 /* Connect to database */
 
-const URL = 'mongodb+srv://naptaskmakeyourday:Esjq3GwuPRt6u79c@cluster0.9uvueow.mongodb.net/naptask?retryWrites=true&w=majority';
+const URL = process.env.DB_CONNECTION || 'mongodb://localhost:27017/naptask';
 
 mongoose
     .connect(URL)
@@ -36,19 +35,19 @@ mongoose
 
 /* Middleware */
 
+const whitelist = ['https://naptask-frontend.vercel.app']; // assuming front-end application is running on localhost port 3000
 
-const whitelist = ['https://naptask-frontend.vercel.app', 'http://localhost:3000'];
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
     }
-  }
 }
 
-app.use(cors(corsOptions));
+app.use(cors(process.env.SERVER_DEPLOYED ? corsOptions : ''));
 app.use(express.json());
 
 
@@ -89,7 +88,7 @@ const encryptData = (stringForEncrypt) => {
 
 const decryptData = (stringForDecrypt) => {
 
-    if (typeof stringForDecrypt.tasks === 'object') {
+    if (typeof stringForDecrypt.tasks === 'object' && stringForDecrypt !== null) {
         stringForDecrypt.tasks.toObject()
         stringForDecrypt._doc.tasks.forEach(object => {
             Object.keys(object._doc).forEach(field => {
@@ -106,17 +105,43 @@ const decryptData = (stringForDecrypt) => {
 
         return stringForDecrypt
     } else {
-
-        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
-        let decryptedData = decipher.update(JSON.stringify(stringForDecrypt), 'hex', 'utf-8');
-        decryptedData += decipher.final('utf-8');
-        return decryptedData
+        if (typeof stringForDecrypt !== 'undefined') {
+            const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv);
+            let decryptedData = decipher.update(stringForDecrypt, 'hex', 'utf-8');
+            decryptedData += decipher.final('utf-8');
+            return decryptedData
+        }
     }
 }
 
 
 /* Routers */
 
+const scheduleArrayTest = [
+    {
+        schedule_title: "Week 1",
+        schedule_body: {
+            mon: [
+                {
+                    task_title: "Math",
+                    timeStart: "08:15",
+                    timeEnd: "09:00"
+                },
+                {
+                    task_title: "Math",
+                    timeStart: "08:15",
+                    timeEnd: "09:00"
+                }
+            ],
+            tue: [],
+            wed: [],
+            thu: [],
+            fri: [],
+            sat: [],
+            sun: []
+        }
+    }
+]
 
 /* Object for tasks-goals routers */
 
@@ -128,14 +153,17 @@ class TasksGoalsManager {
 
     getItem(req, res) {
         Users
-            .findOne({ "_id": req.query.id ? req.query.id : '659fe6a7bf791a4da47f92c0' })
+            .findOne({ "_id": req.query.id })
             .populate(this.editItem)
             .select(this.editItem)
             .then((item) => {
-                //JSON.stringify(item);
+
+                item._doc.tasks.map((element, index) => {
+                    element._doc.title = decryptData(element._doc.title)
+                })
                 res
                     .status(200)
-                    .json(decryptData(item))
+                    .json(item ? item : JSON.stringify({}));
             })
             .catch(error => console.log(error));
     }
@@ -207,12 +235,11 @@ class TasksGoalsManager {
 app.get('/', (req, res) => {
     res.end('This new update')
 })
-
 app.post('/login', (req, res) => {
 
     const query = req.body;
 
-    const login = encryptData(query.login);
+    const login = query.login;
     const password = encryptData(query.password);
     //countDocuments
     Users
@@ -233,7 +260,7 @@ app.post('/signup', (req, res) => {
     const body = req.body;
 
     const newUser = {
-        "login": encryptData(`${body.login}`),
+        "login": `${body.login}`,
         "password": encryptData(`${body.password}`),
         "email": encryptData(`${body.email}`),
         "friends": [],
@@ -269,7 +296,9 @@ app.post('/task/add', (req, res) => {
     const user_id = req.body.user_id
     let body = req.body;
 
-    tasks.setItem(res, encryptData(body), user_id);
+    body.title = encryptData(body.title)
+
+    tasks.setItem(res, body, user_id);
 });
 
 
