@@ -157,7 +157,7 @@ class TasksGoalsManager {
             .populate(this.editItem)
             .select(this.editItem)
             .then((item) => {
-                
+                console.log(item)
                 item.tasks.map((element, index) => {
                     element.title = decryptData(element._doc.title)
                 })
