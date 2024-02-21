@@ -158,8 +158,8 @@ class TasksGoalsManager {
             .select(this.editItem)
             .then((item) => {
 
-                item._doc.tasks.map((element, index) => {
-                    element._doc.title = decryptData(element._doc.title)
+                item.tasks.map((element, index) => {
+                    element.title = decryptData(element._doc.title)
                 })
                 res
                     .status(200)
