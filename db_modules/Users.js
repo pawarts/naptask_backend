@@ -14,6 +14,10 @@ const usersSchema = new Schema({
     goals: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Goal'
+    }],
+    schedules: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Schedule'
     }]
 });
 

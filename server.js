@@ -12,6 +12,7 @@ const path = require('path');
 const Users = require('./db_modules/Users');
 const Tasks = require('./db_modules/Tasks');
 const Goals = require('./db_modules/Goals');
+const Schedules = require('./db_modules/Schedules');
 
 
 /* Create server */
@@ -24,7 +25,7 @@ app.listen(PORT, () => {
 
 /* Connect to database */
 
-const URL = process.env.DB_CONNECTION || 'mongodb://localhost:27017/naptask';
+const URL = process.env.DB_CONNECTION || 'mongodb://localhost:27017/naptask'; //mongodb://localhost:27017/naptask
 
 mongoose
     .connect(URL)
@@ -81,7 +82,7 @@ const encryptData = (stringForEncrypt) => {
         encryptedData += cipher.final('hex');
     }
 
-    return `${encryptedData}`
+    return encryptedData
 }
 
 /* Decrypt data */
@@ -114,34 +115,11 @@ const decryptData = (stringForDecrypt) => {
     }
 }
 
+console.log(decryptData("855948d92326aeb524110021671913dd"))
+console.log(decryptData("4aa28872627490ea7479c03e2bdab9fd"))
+
 
 /* Routers */
-
-const scheduleArrayTest = [
-    {
-        schedule_title: "Week 1",
-        schedule_body: {
-            mon: [
-                {
-                    task_title: "Math",
-                    timeStart: "08:15",
-                    timeEnd: "09:00"
-                },
-                {
-                    task_title: "Math",
-                    timeStart: "08:15",
-                    timeEnd: "09:00"
-                }
-            ],
-            tue: [],
-            wed: [],
-            thu: [],
-            fri: [],
-            sat: [],
-            sun: []
-        }
-    }
-]
 
 /* Object for tasks-goals routers */
 
@@ -157,15 +135,16 @@ class TasksGoalsManager {
             .populate(this.editItem)
             .select(this.editItem)
             .then((item) => {
-                console.log(item)
-                item.tasks.map((element, index) => {
-                    element.title = decryptData(element._doc.title)
-                })
+                if (this.editItem === 'tasks') {
+                    item.tasks.map((element, index) => {
+                        element.title = decryptData(element._doc.title)
+                    })
+                }
                 res
                     .status(200)
                     .json(item ? item : JSON.stringify({}));
             })
-            .catch(error => console.log(error));
+            .catch(error => console.error(error));
     }
 
     changeItem(res, id, data) {
@@ -185,8 +164,6 @@ class TasksGoalsManager {
     deleteItem(res, id, user_id) {
 
         const EditedTable = this.table;
-
-        console.log(id.split(','));
 
         EditedTable
             .deleteMany({ _id: { $in: id.split(',') } })
@@ -208,15 +185,13 @@ class TasksGoalsManager {
 
         const addItem = new EditedTable(data);
 
-        let item_id = 'yt';
-
         addItem
             .save()
             .then((added) => {
                 Users
                     .findByIdAndUpdate(user_id, {
                         $push: {
-                            tasks: added._id
+                            [this.editItem]: added._id
                         }
                     })
                     .then()
@@ -319,6 +294,25 @@ app.delete('/goal/delete/:id', (req, res) => {
 });
 
 app.post('/goal/add', (req, res) => {
-    tasks.setItem(res, req.body);
+    goals.setItem(res, req.body);
+});
+
+
+/* Schedules routers */
+
+const schedules = new TasksGoalsManager('schedules', Schedules);
+
+app.get('/schedule', (req, res) => {
+    schedules.getItem(req, res);
+});
+
+app.post('/schedules/add', (req, res) => {
+    const user_id = req.body.user_id;
+    let body = req.body;
+    schedules.setItem(res, body, user_id);
+});
+
+app.put('/schedule/edit/:id', (req, res) => {
+    schedules.changeItem(res, req.params.id, req.body);
 });
 
