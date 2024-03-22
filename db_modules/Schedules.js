@@ -8,7 +8,7 @@ const schedulesSchema = new Schema({
         required: true
     },
     even: {
-        type: Number
+        type: String
     },
     scheduleBody: {
         mon: [{
