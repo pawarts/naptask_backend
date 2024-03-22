@@ -7,6 +7,9 @@ const schedulesSchema = new Schema({
         type: String,
         required: true
     },
+    even: {
+        type: Number
+    },
     scheduleBody: {
         mon: [{
             title: String,
