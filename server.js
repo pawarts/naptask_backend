@@ -319,3 +319,7 @@ app.put('/schedule/edit/:id', (req, res) => {
     schedules.changeItem(res, req.params.id, req.body);
 });
 
+app.delete('/schedule/delete/:id', (req, res) => {
+    schedules.deleteItem(res, req.params.id, req.body.user_id);
+});
+
