@@ -185,8 +185,6 @@ class TasksGoalsManager {
 
         const addItem = new EditedTable(data);
 
-        console.log(data)
-
         addItem
             .save()
             .then((added) => {
@@ -311,7 +309,6 @@ app.get('/schedule', (req, res) => {
 app.post('/schedules/add', (req, res) => {
     const user_id = req.body.user_id;
     let body = req.body;
-    console.log(body)
     schedules.setItem(res, body, user_id);
 });
 

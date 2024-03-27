@@ -9,8 +9,9 @@ const tasksSchema = new Schema({
     "date": String,
     "collaborators": [String],
     "color": String,
+    "taskDescription": String,
     "done": Boolean,
-    "missed": Boolean
+    "missed": Boolean,
 });
 
 const Tasks = mongoose.model('Task', tasksSchema);
