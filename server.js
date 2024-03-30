@@ -115,9 +115,6 @@ const decryptData = (stringForDecrypt) => {
     }
 }
 
-console.log(decryptData("855948d92326aeb524110021671913dd"))
-console.log(decryptData("4aa28872627490ea7479c03e2bdab9fd"))
-
 
 /* Routers */
 
@@ -260,7 +257,11 @@ app.get('/task', (req, res) => {
 });
 
 app.put('/task/edit/:id', (req, res) => {
-    tasks.changeItem(res, req.params.id, encryptData(req.body));
+    const body = req.body;
+    if (body.title) {
+        body.title = encryptData(body.title)
+    }
+    tasks.changeItem(res, req.params.id, body);
 });
 
 app.delete('/task/delete/:id', (req, res) => {

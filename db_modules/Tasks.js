@@ -10,6 +10,7 @@ const tasksSchema = new Schema({
     "collaborators": [String],
     "color": String,
     "taskDescription": String,
+    "subtask": [String],
     "done": Boolean,
     "missed": Boolean,
 });
