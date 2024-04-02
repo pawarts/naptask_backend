@@ -13,6 +13,7 @@ const Users = require('./db_modules/Users');
 const Tasks = require('./db_modules/Tasks');
 const Goals = require('./db_modules/Goals');
 const Schedules = require('./db_modules/Schedules');
+const { error } = require('console');
 
 
 /* Create server */
@@ -240,11 +241,23 @@ app.post('/signup', (req, res) => {
         "goals": []
     };
 
-    Users
-        .create(newUser)
-        .then(result => res.json(result))
-        .catch(error => console.log(error));
 
+    let setUser = () => {
+        Users
+            .create(newUser)
+            .then(result => res.json(result))
+            .catch(error => console.log(error));
+
+    }
+
+    Users
+        .find({
+            login: body.login
+        })
+        .then(result => {
+            return result.length > 0 ? res.json('userExicted') : setUser()
+        })
+        .catch(error => console.error(error))
 })
 
 
