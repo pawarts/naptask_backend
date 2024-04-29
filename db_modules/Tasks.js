@@ -8,6 +8,11 @@ const tasksSchema = new Schema({
     "endTime": String,
     "date": String,
     "collaborators": [String],
+    "chat": [{
+        from: String,
+        message: String,
+        timestamp: String
+    }],
     "color": String,
     "taskDescription": String,
     "subtask": [String],

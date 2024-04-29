@@ -4,6 +4,14 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
+const http = require('http').createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(http, {
+    cors: {
+        origin: 'http://localhost:3000',
+        methods: ["GET", "POST"]
+    }
+});
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -14,14 +22,6 @@ const Tasks = require('./db_modules/Tasks');
 const Goals = require('./db_modules/Goals');
 const Schedules = require('./db_modules/Schedules');
 const { error } = require('console');
-
-
-/* Create server */
-
-const PORT = 10000;
-app.listen(PORT, () => {
-    console.log('Server listening on port: ' + PORT);
-});
 
 
 /* Connect to database */
@@ -85,7 +85,6 @@ const encryptData = (stringForEncrypt) => {
 
     return encryptedData
 }
-
 /* Decrypt data */
 
 const decryptData = (stringForDecrypt) => {
@@ -334,3 +333,70 @@ app.delete('/schedule/delete/:id', (req, res) => {
     schedules.deleteItem(res, req.params.id, req.body.user_id);
 });
 
+
+
+app.post('/findUser', (req, res) => {
+
+    const body = req.body;
+
+    const searchUser = body.user_name;
+
+    Users
+        .find({ login: { $regex: searchUser, $options: 'i' } })
+        .select('login')
+        .then(result => res.json(result))
+        .catch(error => { console.error(error); res.json({}) });
+})
+app.put('/updateCollaborators', (req, res) => {
+
+    const { login, task_id } = req.body
+
+    Users
+        .updateMany({ login: { $in: login } }, { $addToSet: { tasks: task_id } })
+        .catch(error => console.error(error));
+
+    Tasks
+        .findByIdAndUpdate(task_id, { $addToSet: { collaborators: { $each: login } } })
+        .catch(error => console.error(error))
+
+
+    res.json({})
+})
+
+
+/* SocketIO connection */
+io.on('connection', (socket) => {
+
+    socket.on('connected', (task_id) => {
+        Tasks
+            .findById(task_id)
+            .select('chat')
+            .then(result => socket.emit('recieve_messege', result.chat))
+            .catch(error => console.log(error))
+    })
+
+    socket.on('send_message', (data) => {
+        const { task_id, from, message, timestamp } = data;
+
+        const updateData = { from, message, timestamp }
+
+        Tasks
+            .findByIdAndUpdate(task_id, { $push: { chat: updateData } })
+            .catch(error => console.log(error))
+
+        Tasks
+            .findById(task_id)
+            .select('chat')
+            .then(result => socket.emit('recieve_messege', result.chat))
+            .catch(error => console.log(error))
+    })
+})
+
+
+
+/* Create server */
+
+const PORT = 10000;
+http.listen(PORT, () => {
+    console.log('Server listening on port: ' + PORT);
+});
