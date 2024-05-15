@@ -22,6 +22,10 @@ const Tasks = require('./db_modules/Tasks');
 const Goals = require('./db_modules/Goals');
 const Schedules = require('./db_modules/Schedules');
 const { error } = require('console');
+const { types } = require('util');
+const { v4: uuidv4 } = require('uuid');
+
+const create_id = uuidv4();
 
 
 /* Connect to database */
@@ -246,7 +250,6 @@ app.post('/signup', (req, res) => {
             .create(newUser)
             .then(result => res.json(result))
             .catch(error => console.log(error));
-
     }
 
     Users
@@ -275,6 +278,26 @@ app.put('/task/edit/:id', (req, res) => {
     }
     tasks.changeItem(res, req.params.id, body);
 });
+
+app.put('/task/delete_user/:id', (req, res) => {
+
+    const body = req.body;
+
+    const { login, user_id } = body
+
+    const id = req.params.id
+    Tasks
+        .findByIdAndUpdate(id, {
+            $pull: { collaborators: login }
+        })
+        .catch(error => console.error(error))
+
+    Users
+        .findByIdAndUpdate(user_id, {
+            $pull: { tasks: id }
+        })
+        .catch(error => console.log(error));
+})
 
 app.delete('/task/delete/:id', (req, res) => {
     tasks.deleteItem(res, req.params.id, req.body.user_id);
@@ -347,12 +370,36 @@ app.post('/findUser', (req, res) => {
         .then(result => res.json(result))
         .catch(error => { console.error(error); res.json({}) });
 })
-app.put('/updateCollaborators', (req, res) => {
 
-    const { login, task_id } = req.body
+
+
+app.get('/getNotification/:id', (req, res) => {
+    const id = req.params.id;
 
     Users
-        .updateMany({ login: { $in: login } }, { $addToSet: { tasks: task_id } })
+        .findById(id)
+        .select('notification')
+        .then(result => res.json(result))
+        .catch(error => {
+            console.error(error)
+            res.json({})
+        })
+})
+
+app.post('/sendInvite', (req, res) => {
+})
+
+app.put('/updateCollaborators', (req, res) => {
+
+    const { id, login, task_id } = req.body;
+
+    console.log(id)
+
+    Users
+        .updateMany({ login: { $in: login } }, {
+            $addToSet: { tasks: task_id },
+            $pull: { notification: { id: id } }
+        })
         .catch(error => console.error(error));
 
     Tasks
@@ -388,6 +435,66 @@ io.on('connection', (socket) => {
             .findById(task_id)
             .select('chat')
             .then(result => socket.emit('recieve_messege', result.chat))
+            .catch(error => console.log(error))
+    })
+
+    socket.on('delete_message', ({ id, message }) => {
+
+        Tasks
+            .findByIdAndUpdate(id, { $pull: { chat: message } })
+            .catch(error => console.log(error))
+
+        Tasks
+            .findById(id)
+            .select('chat')
+            .then(result => socket.emit('recieve_messege', result.chat))
+            .catch(error => console.log(error))
+    })
+
+    socket.on('edit_message', ({ id, message_id, message }) => {
+
+        Tasks
+            .updateOne({ _id: id, "chat._id": message_id }, { $set: { 'chat.$': message } })
+            .then(() => {
+                Tasks
+                    .findById(id)
+                    .select('chat')
+                    .then(result => socket.emit('recieve_messege', result.chat))
+                    .catch(error => console.log(error))
+            })
+            .catch(error => console.error(error))
+
+    })
+
+
+
+
+
+    socket.on('send_invite', (data) => {
+
+        const { login, task_info, task_id, user_creator } = data
+
+        const { title, date, startTime } = task_info;
+
+        const send_notification = {
+            type: "invite",
+            title, date, startTime, task_id, user_creator
+        }
+
+        Users
+            .updateMany({ login: { $in: login } }, { $addToSet: { notification: send_notification } })
+            /* .then((result) => socket.emit("get_notification")) */
+            .catch(error => { console.log(error) })
+    })
+
+    socket.on('get_notification', (id) => {
+        Users
+            .findById(id)
+            .select('notification')
+            .then(result => {
+                //console.log(result);
+                socket.emit('get', result.notification)
+            })
             .catch(error => console.log(error))
     })
 })
